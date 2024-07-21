@@ -1,0 +1,184 @@
+﻿@page "/"
+
+<PageTitle>Blazor Calculator</PageTitle>
+
+<table class="calculator">
+    <tr class="output">
+        <td colspan="4">@result</td>
+    </tr>
+    <tr>
+        <td><button @onclick="@(() => SendInput("%"))">%</button></td>
+        <td><button @onclick="@(() => SendInput("CE"))">CE</button></td>
+        <td><button @onclick="ClearAll">C</button></td>
+        <td><button @onclick="@(() => SendInput("/"))">&divide;</button></td>
+    </tr>
+    <tr>
+        <td><button @onclick="@(() => SendInput("7"))">7</button></td>
+        <td><button @onclick="@(() => SendInput("8"))">8</button></td>
+        <td><button @onclick="@(() => SendInput("9"))">9</button></td>
+        <td><button @onclick="@(() => SendInput("x"))">X</button></td>
+    </tr>
+    <tr>
+        <td><button @onclick="@(() => SendInput("4"))">4</button></td>
+        <td><button @onclick="@(() => SendInput("5"))">5</button></td>
+        <td><button @onclick="@(() => SendInput("6"))">6</button></td>
+        <td><button @onclick="@(() => SendInput("-"))">-</button></td>
+    </tr>
+    <tr>
+        <td><button @onclick="@(() => SendInput("1"))">1</button></td>
+        <td><button @onclick="@(() => SendInput("2"))">2</button></td>
+        <td><button @onclick="@(() => SendInput("3"))">3</button></td>
+        <td><button @onclick="@(() => SendInput("+"))">+</button></td>
+    </tr>
+    <tr>
+        <td><button type="button" @onclick="@(() => SendInput("negative"))">+/-</button></td>
+        <td><button type="button" @onclick="@(() => SendInput("0"))">0</button></td>
+        <td><button type="button" @onclick="@(() => SendInput("."))">.</button></td>
+        <td><button type="button" @onclick="@(() => CalculateResult())"> = </button></td>
+    </tr>
+</table>
+
+@code{
+    string? inputNumber1, inputNumber2, inputOperator, decimalPoint, percentKey;
+    double result;
+    bool isNumber1Negative, isNumber2Negative;
+
+    private void SendInput(string input)
+    {
+        int inputNumber;
+        if(int.TryParse(input, out inputNumber)){
+            if (string.IsNullOrWhiteSpace(inputOperator))
+            {
+                inputNumber1 += input;                
+            }
+            else
+                inputNumber2 += input;
+
+            if (!string.IsNullOrWhiteSpace(inputNumber1) && string.IsNullOrWhiteSpace(inputNumber2))
+                result = double.Parse(inputNumber1);
+            else
+                result = double.Parse(inputNumber2);
+        }
+        else
+        {
+            switch (input)
+            {
+                case "+":
+                case "-":
+                case "x":
+                case "/":
+                    CalculateResult();
+                    inputOperator = input;
+                    break;
+                case ".":
+                    if (string.IsNullOrWhiteSpace(inputOperator))
+                        inputNumber1 += ".";
+                    else
+                        inputNumber2 += ".";
+                    break;
+                case "%":
+                    percentKey = "%";
+                    double tempInputNumber1, tempInputNumber2;
+                    if (double.TryParse(inputNumber1, out tempInputNumber1) && double.TryParse(inputNumber2, out tempInputNumber2))
+                    {
+                        result = tempInputNumber1 * tempInputNumber2 / 100;
+                        inputNumber2 = result.ToString();
+                    }
+                    else
+                    {
+                        inputNumber1 = string.Empty;
+                        result = 0;
+                    }
+                    break;
+                default:
+                    percentKey = string.Empty;
+                    break;
+            }
+
+            if(input == "negative")
+            {
+                isNumber1Negative = !isNumber1Negative;                
+
+                if (!string.IsNullOrWhiteSpace(inputNumber1) && string.IsNullOrWhiteSpace(inputOperator) && string.IsNullOrWhiteSpace(inputNumber2))
+                {
+                    if(isNumber1Negative)
+                        inputNumber1 = new string(inputNumber1.Prepend('-').ToArray());
+                    else
+                        inputNumber1 = inputNumber1.Remove(0, 1);
+
+                    result = double.Parse(inputNumber1);
+                }
+                else if (!string.IsNullOrWhiteSpace(inputNumber2))
+                {
+                    isNumber2Negative = !isNumber2Negative;
+
+                    if (isNumber2Negative)
+                        inputNumber2 = new string(inputNumber2.Prepend('-').ToArray());
+                    else
+                        inputNumber2 = inputNumber2.Remove(0, 1);
+
+                    result = double.Parse(inputNumber2);
+                }
+            }
+
+            if(input == "CE")
+            {
+                if (!string.IsNullOrWhiteSpace(inputNumber1) && string.IsNullOrWhiteSpace(inputNumber2))
+                {                    
+                    inputNumber1 = string.Empty;
+                    result = 0;
+                }
+                else if (!string.IsNullOrWhiteSpace(inputNumber2))
+                {
+                    inputNumber2 = string.Empty;
+                    result = 0;
+                }
+            }
+        }
+
+        Console.WriteLine(inputNumber1);
+        Console.WriteLine(inputNumber2);
+        Console.WriteLine(inputOperator);
+    }
+
+    private void CalculateResult()
+    {
+        double number1, number2;
+
+        if(!string.IsNullOrWhiteSpace(inputNumber1) && 
+            !string.IsNullOrWhiteSpace(inputNumber2) && 
+                !string.IsNullOrWhiteSpace(inputOperator))
+        {
+            if(double.TryParse(inputNumber1, out number1) && double.TryParse(inputNumber2, out number2))
+            {
+                switch (inputOperator)
+                {
+                    case "+":
+                        result = number1 + number2;
+                        break;
+                    case "-":
+                        result = number1 - number2;
+                        break;
+                    case "x":
+                        result = number1 * number2;
+                        break;
+                    case "/":
+                        result = number1 / number2;
+                        break;
+                    default:                    
+                        break;
+                }
+
+                inputNumber1 = result.ToString();
+                inputNumber2 = string.Empty;
+                isNumber1Negative = isNumber2Negative = false;
+            }
+        }
+    }
+
+    private void ClearAll()
+    {
+        inputNumber1 = inputNumber2 = inputOperator = null;
+        result = 0;
+    }
+}
